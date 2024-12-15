@@ -1,2 +1,2 @@
-rootProject.name = "nautchkafe-rabbit-bridge"
+rootProject.name = "nautchkafe-scylladb"
 
