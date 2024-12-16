@@ -81,9 +81,8 @@ final class ScyllaApplication {
                         .onFailure(err -> System.err.println("Failed to save user: " + err.getMessage()));
 
                 // Fetch all users with pagination
-                userRepository.findAll(10, 0).onSuccess(users ->
-                        users.forEach(user -> System.out.println("Found user: " + user.name())))
-                    .onFailure(err -> System.err.println("Failed to fetch users: " + err.getMessage()));
+                userRepository.findAll(10, 0).onSuccess(users -> users.forEach(user -> System.out.println("Found user: " + user.name())))
+                        .onFailure(err -> System.err.println("Failed to fetch users: " + err.getMessage()));
 
                 // Fetch users asynchronously
                 userRepository.findAllAsync().thenAccept(users ->
@@ -95,9 +94,8 @@ final class ScyllaApplication {
 
                 // Fetch with a predicate
                 ScyllaUser predicateUser = new ScyllaUser(null, 25);
-                userRepository.findWithPredicate(predicateUser).onSuccess(users ->
-                        users.forEach(user -> System.out.println("User matching predicate: " + user.name())))
-                    .onFailure(err -> System.err.println("Failed to fetch with predicate: " + err.getMessage()));
+                userRepository.findWithPredicate(predicateUser).onSuccess(users -> users.forEach(user -> System.out.println("User matching predicate: " + user.name())))
+                        .onFailure(err -> System.err.println("Failed to fetch with predicate: " + err.getMessage()));
 
                 // Delete with a predicate
                 userRepository.deleteWithPredicate(newUser)
