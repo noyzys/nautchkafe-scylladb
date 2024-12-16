@@ -59,8 +59,7 @@ public final class ScyllaDBRepository<T> implements ScyllaRepository<T> {
     public CompletableFuture<List<T>> findAllPaginatedAsync(final int limit, final int offset) {
         final String query = ScyllaSqlConstants.SELECT_PAGINATED.formatted(tableName);
         return ScyllaValidator.validateAndExecute(tableName, validTable -> queryExecutor.executeAsync(query, List.of(limit, offset))
-                .thenApply(rs -> ScyllaResultMapper.mapAll(rs, mapper))
-                                                 );
+                .thenApply(rs -> ScyllaResultMapper.mapAll(rs, mapper)));
     }
 
     @Override
@@ -78,15 +77,14 @@ public final class ScyllaDBRepository<T> implements ScyllaRepository<T> {
         final String whereClause = predicateToSQL.buildWhereClause(input);
         final String query = queryTemplate.formatted(tableName, whereClause);
         return ScyllaValidator.validateAndExecute(input, validInput -> queryExecutor.executeSync(query, List.empty())
-                .map(rs -> ScyllaResultMapper.mapAll(rs, mapper))
-                                                 );
+                .map(rs -> ScyllaResultMapper.mapAll(rs, mapper)));
     }
 
     private CompletableFuture<List<T>> executeWithPredicateAsync(final T input, final String queryTemplate) {
         final String whereClause = predicateToSQL.buildWhereClause(input);
         final String query = queryTemplate.formatted(tableName, whereClause);
         return ScyllaValidator.validateAndExecute(input, validInput -> queryExecutor.executeAsync(query, List.empty())
-            .thenApply(rs -> ScyllaResultMapper.mapAll(rs, mapper)));
+                .thenApply(rs -> ScyllaResultMapper.mapAll(rs, mapper)));
     }
 }
 
