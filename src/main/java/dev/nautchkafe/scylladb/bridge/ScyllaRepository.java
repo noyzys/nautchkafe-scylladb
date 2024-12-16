@@ -11,22 +11,21 @@ interface ScyllaRepository<T> {
 
     Try<List<T>> findAll();
 
-    Try<Option<T>> find(final Predicate<T> predicate);
+    Try<List<T>> findWithPredicate(final T input);
 
-    Try<Option<T>> findById(final Object id);
+    Try<Option<T>> find(final Function1<T, Boolean> predicate);
 
     Try<Void> save(final T entity);
 
-    Try<Void> update(final T entity);
+    Try<Void> deleteWithPredicate(final T input);
 
-    Try<Void> delete(final Predicate<T> predicate);
-
-    
     CompletableFuture<List<T>> findAllAsync();
-    
-    CompletableFuture<Option<T>> findAsync(final Function<T, Boolean> predicate);
-    
-    CompletableFuture<Void> saveAsync(final T entity);
-    
-    CompletableFuture<Void> deleteAsync(final Function<T, Boolean> predicate);
+
+    CompletableFuture<List<T>> findWithPredicateAsync(final T input);
+
+    Try<List<T>> findAllPaginated(final int limit, final int offset);
+
+    CompletableFuture<List<T>> findAllPaginatedAsync(final int limit, final int offset);
+
+    CompletableFuture<Void> deleteWithPredicateAsync(final T input);
 }

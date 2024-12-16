@@ -53,72 +53,63 @@ final class ScyllaApplication {
                 // Initializing query executor
                 QueryExecutor executor = new ScyllaQueryExecutor(session);
 
-                // Example of saving a user
-                ScyllaUser newUser = new ScyllaUser("Frankie", 30);
-                ScyllaRepository<ScyllaUser> userRepository = new ScyllaDBRepository(executor, "users", User::getId, User::toBindValues, User::mapRow);
-
-                // Saving the user
-                userRepository.save(newUser).onSuccess(res -> System.out.println("User saved"));
-
-                // Example of fetching users
-                userRepository.findAll().onSuccess(users -> users.forEach(user -> System.out.println("Found user: " + user.name())));
-
-                // Example of deleting a user
-                userRepository.delete(user -> user.name().equals("Frankie")).onSuccess(res -> System.out.println("User deleted"));
-
-
-                /* ......................... */
-                // Example of resultmapper
+                // Define user repository with functional bindings and predicate handling
                 ScyllaResultMapper<ScyllaUser> userMapper = row -> new ScyllaUser(
-                    row.getColumn("name", String.class),
-                    row.getColumn("age", Integer.class)
+                        row.getColumn("name", String.class),
+                        row.getColumn("age", Integer.class)
                 );
 
-                Function<User, List<Object>> userBinder = user -> List.of(user.name(), user.age());
+                Function<ScyllaUser, List<Object>> userBinder = user -> List.of(user.name(), user.age());
 
-                ScyllaTableCoordinator tableCoordinator = new ScyllaTableCoordinator(queryExecutor);
-                Try<Void> createTable = tableCoordinator.createTable("users", "name TEXT PRIMARY KEY, age INT");
+                ScyllaPredicateSQL<ScyllaUser> userPredicateSQL = new ScyllaPredicateSQL<ScyllaUser>(List.empty())
+                        .addMapping(user -> Option.of("age > 25").filter(ignore -> user.age() > 25))
+                        .addMapping(user -> Option.of("name = ?").filter(ignore -> user.name() != null));
 
-                if (createTable.isFailure()) {
-                    System.err.println("Failed to create table");
-                    return;
-                }
+                ScyllaDBRepository<ScyllaUser> userRepository = new ScyllaDBRepository<>(
+                        executor, userMapper, userBinder, "users", userPredicateSQL
+                );
 
-                // Insert Example User
-                ScyllaUser user = new ScyllaUser("Pookoty", 30);
-                Try<Void> saveResult = userRepository.save(user);
-                if (saveResult.isFailure()) {
-                    System.err.println("Failed to save user");
-                    return;
-                }
+                // Table setup
+                ScyllaTableCoordinator tableCoordinator = new ScyllaTableCoordinator(executor);
+                tableCoordinator.createTable("users", "name TEXT PRIMARY KEY, age INT")
+                        .onFailure(err -> System.err.println("Failed to create table: " + err.getMessage()));
 
-                // Fetch All Users (Sync)
-                Try<List<ScyllaUser>> users = userRepository.findAll();
-                if (users.isFailure()) {
-                    System.err.println("Failed to fetch users");
-                    return;
-                }
+                // Save a user
+                ScyllaUser newUser = new ScyllaUser("Frankie", 30);
+                userRepository.save(newUser)
+                        .onSuccess(res -> System.out.println("User saved"))
+                        .onFailure(err -> System.err.println("Failed to save user: " + err.getMessage()));
 
-                users.get().forEach(u -> System.out.println(u.name() + " - " + u.age()));
+                // Fetch all users with pagination
+                userRepository.findAll(10, 0).onSuccess(users ->
+                        users.forEach(user -> System.out.println("Found user: " + user.name())))
+                    .onFailure(err -> System.err.println("Failed to fetch users: " + err.getMessage()));
 
-                // Fetch User By Predicate (Async), u - user
-                CompletableFuture<Option<User>> userOptionAsync = userRepository.findAsync(u -> u.age() > 25);
-                userOptionAsync.thenAccept(userOpt -> userOpt
-                    .peek(u -> System.out.println("Found user: " + u.name()))
-                    .onEmpty(() -> System.out.println("No user found")));
+                // Fetch users asynchronously
+                userRepository.findAllAsync().thenAccept(users ->
+                        users.forEach(user -> System.out.println("Async user: " + user.name())))
+                    .exceptionally(err -> {
+                    System.err.println("Failed to fetch users asynchronously: " + err.getMessage());
+                    return null;
+                });
 
-                // Delete User Async
-                CompletableFuture<Void> deleteAsyncResult = userRepository.deleteAsync(u -> u.name().equals("Pookoty"));
-                deleteAsyncResult.thenRun(() -> System.out.println("User deleted"));
+                // Fetch with a predicate
+                ScyllaUser predicateUser = new ScyllaUser(null, 25);
+                userRepository.findWithPredicate(predicateUser).onSuccess(users ->
+                        users.forEach(user -> System.out.println("User matching predicate: " + user.name())))
+                    .onFailure(err -> System.err.println("Failed to fetch with predicate: " + err.getMessage()));
 
-                // Drop Table
-                Try<Void> dropTableTry = tableCoordinator.dropTable("users");
-                if (dropTableTry.isFailure()) {
-                    System.err.println("Failed to drop table");
-                }
+                // Delete with a predicate
+                userRepository.deleteWithPredicate(newUser)
+                        .onSuccess(res -> System.out.println("User deleted"))
+                        .onFailure(err -> System.err.println("Failed to delete user: " + err.getMessage()));
 
-                // Close Session
-                sessionCoordinator.closeSession(session);
+                // Drop table
+                tableCoordinator.dropTable("users")
+                        .onFailure(err -> System.err.println("Failed to drop table: " + err.getMessage()));
+
+                // Close session
+                sessionManager.closeSession(session);
             });
         }).onFailure(e -> System.err.println("Failed to connect to ScyllaDB: " + e.getMessage()));
     }
