@@ -59,8 +59,8 @@ final class ScyllaApplication {
                         row.getColumn("age", Integer.class)
                 );
 
+                // Define predicate sql operations of mappings
                 Function<ScyllaUser, List<Object>> userBinder = user -> List.of(user.name(), user.age());
-
                 ScyllaPredicateSQL<ScyllaUser> userPredicateSQL = new ScyllaPredicateSQL<ScyllaUser>(List.empty())
                         .addMapping(user -> Option.of("age > 25").filter(ignore -> user.age() > 25))
                         .addMapping(user -> Option.of("name = ?").filter(ignore -> user.name() != null));
