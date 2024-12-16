@@ -46,9 +46,10 @@ final class ScyllaDBRepository<T> implements ScyllaRepository<T> {
 
     @Override
     public Try<Void> save(final T entity) {
-        final String placeholders = binder.apply(entity)
-                .stream().map(value -> "?").collect(Collectors.joining(", "));
-
+        final String placeholders = List.ofAll(binder.apply(entity))
+            .map(value -> "?")
+            .mkString(", ");
+            
         final String query = ScyllaSqlConstants.INSERT.formatted(tableName, placeholders);
         return queryExecutor.executeSync(query, binder.apply(entity)).map(rs -> null);
     }
@@ -77,14 +78,14 @@ final class ScyllaDBRepository<T> implements ScyllaRepository<T> {
 
     @Override
     public Try<List<T>> findAllPaginated(final int limit, final int offset) {
-        final String query = "SELECT * FROM %s LIMIT ? OFFSET ?".formatted(tableName);
+        final String query = ScyllaSqlConstants.SELECT_PAGINATED.formatted(tableName);
         return queryExecutor.executeSync(query, List.of(limit, offset))
                 .map(rs -> ScyllaResultMapper.mapAll(rs, mapper));
     }
 
     @Override
     public CompletableFuture<List<T>> findAllPaginatedAsync(final int limit, final int offset) {
-        final String query = "SELECT * FROM %s LIMIT ? OFFSET ?".formatted(tableName);
+        final String query = ScyllaSqlConstants.SELECT_PAGINATED.formatted(tableName);
         return queryExecutor.executeAsync(query, List.of(limit, offset))
                 .thenApply(rs -> ScyllaResultMapper.mapAll(rs, mapper));
     }
