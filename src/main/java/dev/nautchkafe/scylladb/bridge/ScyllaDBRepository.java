@@ -39,7 +39,7 @@ public final class ScyllaDBRepository<T> implements ScyllaRepository<T> {
     @Override
     public CompletableFuture<List<T>> findAllAsync() {
         final String query = ScyllaSqlConstants.SELECT_ALL.formatted(tableName);
-        return ScyllaValidator.validateAndExecute(entity, validEntity -> queryExecutor.executeAsync(query, List.empty())
+        return ScyllaValidator.validateAndExecute(tableName, validEntity -> queryExecutor.executeAsync(query, List.empty())
                 .thenApply(rs -> ScyllaResultMapper.mapAll(rs, mapper)));
     }
 
