@@ -4,7 +4,6 @@ import io.vavr.collection.List;
 import io.vavr.control.Option;
 import io.vavr.control.Try;
 import java.util.function.Function;
-import java.util.function.Predicate
 import java.util.concurrent.CompletableFuture;
 
 interface ScyllaRepository<T> {
