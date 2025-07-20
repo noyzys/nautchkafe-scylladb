@@ -10,7 +10,7 @@ repositories {
 }
 
 dependencies {
-    implementation("io.vavr:vavr:0.10.5")
+    implementation("io.vavr:vavr:0.10.7")
 
     implementation("com.datastax.oss:java-driver-core:4.17.0") 
 }
